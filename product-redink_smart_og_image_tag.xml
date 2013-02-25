@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<product productid="redink_smart_og_image_tag" active="1">
+  <title>RedInk Design - Smart OG Image Tag</title>
+	<description><![CDATA[Populates the Facebook OG Image tag with the first image in a post - whether it be an attachment or [img] tag. If there is no image found, it will use what ever is entered in the facebook settings as the default image, or none if all else fails.]]></description>
+	<version>1</version>
+	<url>http://www.vbulletin.org/forum/showthread.php?t=292850</url>
+	<versioncheckurl />
+	<dependencies>
+	</dependencies>
+	<codes>
+	</codes>
+	<templates>
+	</templates>
+	<stylevardfns>
+	</stylevardfns>
+	<stylevars>
+	</stylevars>
+	<plugins>
+		<plugin active="1" executionorder="5">
+			<title>OG:Image Population</title>
+			<hookname>fb_opengraph_array</hookname>
+			<phpcode><![CDATA[global $vbulletin;
+
+if ($vbulletin->options['enablefacebookconnect'] && isset($GLOBALS['threadinfo']['description']) && !empty($GLOBALS['threadinfo']['description'])){
+	$string = $GLOBALS['threadinfo']['description'];
+	$img_str = null;
+	if (stripos($string, '[/img]') !== false){
+	
+		$regex = '#\[img\]\s*(https?://([^*\r\n]+|[a-z0-9/\\._\- !]+))\[/img\]#iUe';
+		preg_match($regex, $string, $match);
+		if (isset($match[2]) && !empty($match[2])){
+			$img_str = $match[2];
+		}
+	
+	}else if (stripos($string, '[/attach]') !== false){
+	
+		$regex = '#\[attach(?:=(right|left|config))?\](\d+)\[/attach\]#i';
+		preg_match($regex, $string, $match);
+		if (isset($match[2]) && !empty($match[2])){
+			$img_str = $vbulletin->options['bburl'] . '/attachment.php?attachmentid=' . $match[2];
+		}
+	
+	}else if (!empty($vbulletin->options['facebookfeedimageurl'])){
+		$img_str = $vbulletin->options['facebookfeedimageurl'];
+	}
+	
+	if ($img_str){
+		$img_str = str_replace(array('https://', 'http://'), '', $img_str);
+		$og_array['og:image'] = 'http://' . $img_str;
+	}
+	
+}]]></phpcode>
+		</plugin>
+	</plugins>
+	<phrases>
+	</phrases>
+	<options>
+	</options>
+	<helptopics>
+	</helptopics>
+	<cronentries>
+	</cronentries>
+	<faqentries>
+	</faqentries>
+	<navigation>
+	</navigation>
+</product>
