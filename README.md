@@ -1,6 +1,8 @@
 vb-smart-og-image-tag
 =====================
 
+Smart OG Image Tag
+
 Currently vBulletin's facebook open graph image tag uses what's entered in Options -> Facebook Options -> Image URL. If you leave this field blank, the <og:image> meta tag is omitted and Facebook's crawler will try to use any image found on the page. 
 
 This mod looks for the first [img] or [attach] tags in a post and uses that image for the <og:image> meta tag. This will tell facebook's crawler to use that image for the post. 
