@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
 <product productid="redink_smart_og_image_tag" active="1">
-  <title>RedInk Design - Smart OG Image Tag</title>
+	<title>RedInk Design - Smart OG Image Tag</title>
 	<description><![CDATA[Populates the Facebook OG Image tag with the first image in a post - whether it be an attachment or [img] tag. If there is no image found, it will use what ever is entered in the facebook settings as the default image, or none if all else fails.]]></description>
-	<version>1</version>
+	<version>1.1</version>
 	<url>http://www.vbulletin.org/forum/showthread.php?t=292850</url>
 	<versioncheckurl />
 	<dependencies>
@@ -19,37 +19,52 @@
 	<plugins>
 		<plugin active="1" executionorder="5">
 			<title>OG:Image Population</title>
-			<hookname>fb_opengraph_array</hookname>
+			<hookname>parse_templates</hookname>
 			<phpcode><![CDATA[global $vbulletin;
 
-if ($vbulletin->options['enablefacebookconnect'] && isset($GLOBALS['threadinfo']['description']) && !empty($GLOBALS['threadinfo']['description'])){
+if ($vbulletin->options['enablefacebookconnect'] && isset($GLOBALS['threadinfo']['description']) && !empty($GLOBALS['threadinfo']['description']) && isset($facebook_opengraph)){
 	$string = $GLOBALS['threadinfo']['description'];
-	$img_str = null;
+	if (!function_exists('fetch_avatar_url')){
+		require_once(DIR . '/includes/functions_user.php');
+	}
+	$avatar_url = '';
+	$avatar_url = fetch_avatar_url($GLOBALS['threadinfo']['postuserid']);
+	if (is_array($avatar_url) && isset($avatar_url[0]) && !empty($avatar_url[0])){
+		$avatar_url = $avatar_url[0];
+	}
+	
+	$images = array();
 	if (stripos($string, '[/img]') !== false){
-	
 		$regex = '#\[img\]\s*(https?://([^*\r\n]+|[a-z0-9/\\._\- !]+))\[/img\]#iUe';
-		preg_match($regex, $string, $match);
-		if (isset($match[2]) && !empty($match[2])){
-			$img_str = $match[2];
+		preg_match_all($regex, $string, $matches);
+		if (!empty($matches) && isset($matches[2]) && is_array($matches[2])){
+			foreach ($matches[2] as $img_str){
+				array_push($images, $img_str);
+			}
 		}
+	}
 	
-	}else if (stripos($string, '[/attach]') !== false){
-	
+	if (stripos($string, '[/attach]') !== false){
 		$regex = '#\[attach(?:=(right|left|config))?\](\d+)\[/attach\]#i';
-		preg_match($regex, $string, $match);
-		if (isset($match[2]) && !empty($match[2])){
-			$img_str = $vbulletin->options['bburl'] . '/attachment.php?attachmentid=' . $match[2];
+		preg_match_all($regex, $string, $matches);
+		if (!empty($matches) && isset($matches[2]) && is_array($matches[2])){
+			foreach ($matches[2] as $attach_id){
+				array_push($images, $vbulletin->options['bburl'] . '/attachment.php?attachmentid=' . $attach_id);
+			}
 		}
-	
-	}else if (!empty($vbulletin->options['facebookfeedimageurl'])){
-		$img_str = $vbulletin->options['facebookfeedimageurl'];
 	}
 	
-	if ($img_str){
-		$img_str = str_replace(array('https://', 'http://'), '', $img_str);
-		$og_array['og:image'] = 'http://' . $img_str;
+	if (!empty($avatar_url)){
+		array_push($images, $vbulletin->options['bburl'] . '/' . $avatar_url);
 	}
-	
+
+	if (!empty($images)){
+		foreach ($images as $img_str){
+			$img_str = str_replace(array('https://', 'http://'), '', $img_str);
+			$facebook_opengraph .= '<meta property="og:image" content="http://' . $img_str . '" />';
+		}
+	}
+
 }]]></phpcode>
 		</plugin>
 	</plugins>
